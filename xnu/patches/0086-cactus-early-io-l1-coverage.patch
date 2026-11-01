@@ -1,0 +1,19 @@
+--- a/osfmk/arm64/arm_vm_init.c
++++ b/osfmk/arm64/arm_vm_init.c
+@@ -2333,6 +2333,15 @@
+ 	va_l1 = dynamic_memory_begin;
+ 	va_l1_end = va_l1 + ((2 + (mem_segments * 10)) << 20);
+ 	va_l1_end += round_page(args->Video.v_height * args->Video.v_rowBytes);
+ 	va_l1_end = (va_l1_end + 0x00000000007FFFFFULL) & 0xFFFFFFFFFF800000ULL;
++
++	/*
++	 * The L3 setup below walks every L1 slot in this interval and assumes
++	 * each slot already points to an L2 table. The earlier dynamic-memory
++	 * setup only guarantees the first L1 slot; the framebuffer-sized tail
++	 * can cross an L1 boundary. Allocate any missing L2 roots before walking.
++	 */
++	init_ptpages(cpu_tte, va_l1, va_l1_end, FALSE,
++	    ARM_DYNAMIC_TABLE_XN | ARM_TTE_TABLE_AP(ARM_TTE_TABLE_AP_USER_NA));
+ 
+ 	cpu_l1_tte = cpu_tte + ((va_l1 & ARM_TT_L1_INDEX_MASK) >> ARM_TT_L1_SHIFT);
+ 
