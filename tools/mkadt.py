@@ -37,14 +37,14 @@ QEMU_VTIMER_INTID = 27
 # kernel-managed range starts above the live framebuffer (0x5e605000) and
 # ends at the top of RAM; >1GB makes XNU use 16K software pages on a 4K
 # hardware granule. GIC and CNTFRQ come from the live FDT.
-CACTUS_PHYS_BASE = 0x70000000
-CACTUS_MEM_SIZE = 0x50000000
-CACTUS_GICD, CACTUS_GICD_SIZE = 0x0c000000, 0x40000
-CACTUS_GICR, CACTUS_GICR_SIZE = 0x0c100000, 0x200000
-CACTUS_FB, CACTUS_FB_SIZE = 0x5e605000, 0x17bb000
-CACTUS_FB_W, CACTUS_FB_H, CACTUS_FB_STRIDE = 720, 1440, 720 * 4
-CACTUS_TIMEBASE = 13000000
-CACTUS_VTIMER_INTID = 27
+OPPO6765_PHYS_BASE = 0x40000000
+OPPO6765_MEM_SIZE = 0x100000000
+OPPO6765_GICD, OPPO6765_GICD_SIZE = 0x0c000000, 0x40000
+OPPO6765_GICR, OPPO6765_GICR_SIZE = 0x0c100000, 0x200000
+OPPO6765_FB, OPPO6765_FB_SIZE = 0x7b870000, 0x0149000
+OPPO6765_FB_W, OPPO6765_FB_H, OPPO6765_FB_STRIDE = 720, 1600, 736 * 4
+OPPO6765_TIMEBASE = 13000000
+OPPO6765_VTIMER_INTID = 27
 
 BOOT_MANIFEST_HASH = hashlib.sha384(b'sweet boot manifest').digest()
 
@@ -85,10 +85,10 @@ def build(seed=None, qemu=False, highmem=False, cactus=False):
     """qemu=True: same tree, but with QEMU virt's GIC addresses and CNTFRQ (tools/qemu-sweet.py).
     cactus=True: Redmi 6A (MT6765, 2GB, 720x1440) instead of sweet."""
     if cactus:
-        phys_base, mem_size = CACTUS_PHYS_BASE, CACTUS_MEM_SIZE
-        gicd, gicd_size, gicr, gicr_size = CACTUS_GICD, CACTUS_GICD_SIZE, CACTUS_GICR, CACTUS_GICR_SIZE
-        timebase, vtimer = CACTUS_TIMEBASE, CACTUS_VTIMER_INTID
-        fb, fb_size, fb_w, fb_h, fb_stride = CACTUS_FB, CACTUS_FB_SIZE, CACTUS_FB_W, CACTUS_FB_H, CACTUS_FB_STRIDE
+        phys_base, mem_size = OPPO6765_PHYS_BASE, OPPO6765_MEM_SIZE
+        gicd, gicd_size, gicr, gicr_size = OPPO6765_GICD, OPPO6765_GICD_SIZE, OPPO6765_GICR, OPPO6765_GICR_SIZE
+        timebase, vtimer = OPPO6765_TIMEBASE, OPPO6765_VTIMER_INTID
+        fb, fb_size, fb_w, fb_h, fb_stride = OPPO6765_FB, OPPO6765_FB_SIZE, OPPO6765_FB_W, OPPO6765_FB_H, OPPO6765_FB_STRIDE
     else:
         phys_base, mem_size = (HIGH_PHYS_BASE, HIGH_MEM_SIZE) if highmem else (PHYS_BASE, MEM_SIZE)
         gicd, gicd_size, gicr, gicr_size = GICD, GICD_SIZE, GICR, GICR_SIZE

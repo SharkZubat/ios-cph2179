@@ -7,6 +7,7 @@ research/
 shim/out/
 xnu/out/
 xnu/out-*/
+xnu-kernel
 __pycache__/
 # device testing
 OPPOA15S

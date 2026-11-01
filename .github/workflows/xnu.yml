@@ -11,7 +11,7 @@ on:
         default: DEVELOPMENT
       machine_config:
         description: xnu MACHINE_CONFIG
-        default: CACTUS
+        default: OPPO6765
       keep_going:
         description: make -k (collect all compile errors in one run)
         default: "true"
@@ -30,7 +30,7 @@ env:
   DXB_SHA: 663906528d1cd5ea8fde7de6f16de73db9511549
   MACOS_VERSION: ${{ inputs.macos_version || '13.5' }}
   KERNEL_CONFIG: ${{ inputs.kernel_config || 'DEVELOPMENT' }}
-  MACHINE_CONFIG: ${{ inputs.machine_config || 'CACTUS' }}
+  MACHINE_CONFIG: ${{ inputs.machine_config || 'OPPO6765' }}
   CCACHE: ccache
   CCACHE_DIR: ${{ github.workspace }}/.ccache
   CCACHE_COMPRESS: "1"
@@ -71,7 +71,7 @@ jobs:
 
           path = Path('dxb/build.sh')
           old = 'ARCHS="x86_64 arm64e" VALID_ARCHS="x86_64 arm64e"'
-          if os.environ['MACHINE_CONFIG'] == 'CACTUS':
+          if os.environ['MACHINE_CONFIG'] == 'OPPO6765':
               new = ('ARCHS="arm64" VALID_ARCHS="arm64" '
                      "OTHER_CFLAGS='$(inherited) -mcpu=cortex-a53 -mno-outline-atomics'")
           else:
