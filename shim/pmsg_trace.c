@@ -11,7 +11,7 @@
  */
 #include "pmsg_trace.h"
 
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 
 #define PMSG_BASE 0x47d60000UL
 #define PMSG_ZONE_SIZE 0x10000U

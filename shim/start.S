@@ -25,7 +25,7 @@ _start:
 	adr	x1, _stack_top
 	mov	sp, x1
 	adr	x1, vectors
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 	mrs	x2, CurrentEL
 	cmp	x2, #0x8
 	b.eq	99f
@@ -39,7 +39,7 @@ _start:
 	msr	vbar_el1, x1
 #endif
 	isb
-#if defined(BOARD_CACTUS) && defined(SHIM_EARLY_PSTORE) && SHIM_EARLY_PSTORE
+#if defined(BOARD_OPPO6765) && defined(SHIM_EARLY_PSTORE) && SHIM_EARLY_PSTORE
 	/* Leave a breadcrumb before touching the BSS. */
 	ldr	x1, =0x47c90000
 	ldr	w2, =0x31424443		/* "CDB1" */
@@ -60,13 +60,14 @@ _start:
 	str	xzr, [x1], #8
 	b	1b
 2:	mov	x0, x19
-#if defined(BOARD_CACTUS) && defined(SHIM_STAGE15_EARLY) && SHIM_STAGE15_EARLY
+#if defined(BOARD_OPPO6765) && defined(SHIM_STAGE15_EARLY) && SHIM_STAGE15_EARLY
 	/* Minimum real-shim entry probe: stack, vectors and BSS only.
-	 * No debug RAM, watchdog, framebuffer or XNU before USB. */
+	 * EARLY_WDT, if selected by the build, runs before BSS. No debug RAM,
+	 * framebuffer or XNU before USB. */
 	bl	stage15_early_main
 	b	3f
 #endif
-#if defined(BOARD_CACTUS) && defined(CACTUS_PMSG_TRACE) && CACTUS_PMSG_TRACE
+#if defined(BOARD_OPPO6765) && defined(CACTUS_PMSG_TRACE) && CACTUS_PMSG_TRACE
 	/* Earliest C-level breadcrumb: BSS and stack exist, and MMU is off.
 	 * Write before watchdog, console, DT or payload initialization. */
 	adr	x0, cactus_pmsg_start_msg
@@ -80,7 +81,7 @@ _start:
 3:	wfe
 	b	3b
 
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 	/* LK enters the cactus shim at EL2 (confirmed by Stage 3/4 hardware
 	 * traces). XNU's primary entry expects EL1. Hand off only after setting
 	 * up an AArch64 EL1 environment. x0 = entry PA, x1 = boot_args PA.
@@ -163,7 +164,7 @@ xnu_enter_el1:
 	b	5b
 #endif
 
-#if defined(BOARD_CACTUS) && defined(CACTUS_PMSG_TRACE) && CACTUS_PMSG_TRACE
+#if defined(BOARD_OPPO6765) && defined(CACTUS_PMSG_TRACE) && CACTUS_PMSG_TRACE
 	.section .rodata, "a"
 cactus_pmsg_start_msg:
 	.asciz "shim start"

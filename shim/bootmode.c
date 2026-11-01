@@ -2,7 +2,7 @@
 #include "board.h"
 #include "debug.h"
 
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 
 #define PWRAP_WACS2_CMD		(PWRAP_BASE + 0xC20UL)
 #define PWRAP_WACS2_RDATA	(PWRAP_BASE + 0xC24UL)

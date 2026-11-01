@@ -8,16 +8,16 @@
  * generic loader/debug code stays identical.
  */
 
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 
-#define BOARD_NAME		"cactus"
+#define BOARD_NAME		"oppo6765"
 
-/* Redmi 6A / MT6765: reserved-memory cont_splash_region, from the live FDT. */
-#define FB_BASE			0x5e605000UL
+/* CPH2179 /chosen ATAG videolfb: MTK's driver selects this legacy record. */
+#define FB_BASE			0x7b870000UL
 #define FB_PHYS			FB_BASE
 #define FB_W			720
-#define FB_H			1440
-#define FB_STRIDE		(FB_W * 4)	/* a8r8g8b8 */
+#define FB_H			1600
+#define FB_STRIDE		(736 * 4)	/* fb0 virtual width 736, 32 bpp */
 
 /* 720 px wide: 8x16 font at 2x gives 45 columns and 45 rows. */
 #define CON_SCALE		2
@@ -32,11 +32,11 @@
 #define PTIMER_INTID		26
 #define SGI_INTID		1
 
-/* No UFS on cactus; storage is MSDC/eMMC. */
+/* CPH2179 uses eMMC, not UFS. */
 #define BOARD_HAS_UFS		0
 /* Cortex-A53 supports 4K/64K granules, not 16K. */
 #define BOARD_MMU_16K		0
-/* CACTUS has the MT6765 top RGU and a pstore reserved region. */
+/* MT6765 top RGU; CPH2179 live FDT confirms the pstore base used below. */
 #define BOARD_HAS_WDT		1
 #define BOARD_HAS_DBG		1
 #define WDT_BASE		0x10007000UL

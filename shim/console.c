@@ -37,13 +37,13 @@ static void scroll_up(void)
 
 void con_clear(uint32_t bg)
 {
-	for (int y = 0; y < FB_H; y++) {
-		volatile uint32_t *line = con_fb + y * (FB_STRIDE / 4);
-		for (int x = 0; x < FB_W; x++)
-			line[x] = bg;
-	}
+	//for (int y = 0; y < FB_H; y++) {
+	//	volatile uint32_t *line = con_fb + y * (FB_STRIDE / 4);
+	//	for (int x = 0; x < FB_W; x++)
+	//		line[x] = bg;
+	//}
 	con_bg = bg;
-	row = 0;
+	row = 1;
 }
 
 static void put_char(int col, char ch, uint32_t fg)

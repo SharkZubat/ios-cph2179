@@ -1,12 +1,14 @@
 /*
- * Cactus Stage 15 EARLY: exercise the *actual* XNU shim Linux Image
+ * MT6765 Stage 15 EARLY: exercise the *actual* XNU shim Linux Image
  * entry/stack/BSS with exactly the hardware-positive Stage 14 MUSB driver.
- * Deliberately bypass shim_main and every normal debug/display/WDT access.
+ * Deliberately bypass shim_main and normal debug/display initialization.
+ * The diagnostic wrapper may arm the RGU before BSS to outlast LK's timer.
  *
  * Build STAGE15_EARLY=1: USB + changing records only
  *       STAGE15_EARLY=2: then original dbg_init / reserved RAM
  *       STAGE15_EARLY=3: then watchdog init and ping
  *       STAGE15_EARLY=4: then inspect LK's live FDT, never copy XNU
+ *       STAGE15_EARLY=5: also report fixed FDT reservations
  *
  * Records are proof of execution at each marker, not XNU-origin logging.
  * No Linux chainload, no bootloader writes, no kernel relocation.
@@ -26,8 +28,8 @@
 #include "fdt_ranges.h"
 #endif
 
-#if !defined(BOARD_CACTUS) || !defined(SHIM_STAGE15_EARLY) || SHIM_STAGE15_EARLY < 1
-#error Stage 15 Early is cactus-only and requires STAGE15_EARLY=1..4
+#if !defined(BOARD_OPPO6765) || !defined(SHIM_STAGE15_EARLY) || SHIM_STAGE15_EARLY < 1
+#error Stage 15 Early requires an MT6765 target and STAGE15_EARLY=1..5
 #endif
 
 enum {
@@ -42,6 +44,8 @@ enum {
     EVT_FDT_AFTER   = 0x1588,
     EVT_DRAM_BANK   = 0x1589,
     EVT_DONE        = 0x158a,
+    EVT_FDT_RESV_SUMMARY = 0x158b,
+    EVT_FDT_RESV_RANGE   = 0x158c,
     EVT_EXCEPTION   = 0x15ef,
     EVT_EXC_STATE   = 0x15ee,
 };
@@ -140,6 +144,20 @@ void stage15_early_main(uintptr_t dtb)
         for (unsigned i = 0; i < info.memory_count; ++i)
             record(EVT_DRAM_BANK, i, info.memory[i].base, info.memory[i].size);
     }
+#if SHIM_STAGE15_EARLY >= 5
+    if (!parse_result) {
+        /* fdt_inspect reports fixed memreserve and reserved-memory reg ranges.
+         * Dynamic size/alloc-ranges nodes have no assigned base here. */
+        record(EVT_FDT_RESV_SUMMARY, info.reserved_count,
+               info.initrd_start, info.initrd_end);
+        pump(20);
+        for (unsigned i = 0; i < info.reserved_count; ++i) {
+            record(EVT_FDT_RESV_RANGE, i,
+                   info.reserved[i].base, info.reserved[i].size);
+            pump(20);
+        }
+    }
+#endif
     pump(1250);
 #endif
     pump(9000);

@@ -17,7 +17,7 @@
 #include "fdt.h"
 #include "loader.h"
 #include "watchdog.h"
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 #include "fdt_ranges.h"
 #include "payload_layout.h"
 extern char _head[], _end[];
@@ -119,7 +119,7 @@ static int range_ok(uint64_t v, uint64_t len, uint64_t base, uint64_t size)
 	return v >= base && v - base <= size && len <= size - (v - base);
 }
 
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 /* The cactus bootloader enters at EL2. XNU requires the boot CPU at EL1. */
 extern void xnu_enter_el1(uintptr_t entry_pa, uintptr_t boot_args_pa)
     __attribute__((noreturn));
@@ -131,7 +131,7 @@ const char *loader_boot(uintptr_t dtb)
 {
 	uint32_t fdt_size;
 	uint64_t rd_start, rd_end;
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 	struct fdt_info live;
 #endif
 
@@ -143,7 +143,7 @@ const char *loader_boot(uintptr_t dtb)
 		con_str("DTB", "BAD HEADER");
 		return "bad DTB";
 	}
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 	if (fdt_inspect((const void *)dtb, fdt_size, &live)) {
 #if defined(SHIM_STAGE15) && SHIM_STAGE15
 		stage15_mark(S15_ERROR, 1, dtb, fdt_size);
@@ -207,7 +207,7 @@ const char *loader_boot(uintptr_t dtb)
 		con_hex("PAYLOAD", hdr_size);
 		return "segment table too large";
 	}
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 	/* Mandatory for EVERY cactus XNU build, including normal STAGE15=0:
 	 * reject unsafe physical windows and segments before any copy. */
 	struct xnu_layout verified;
@@ -424,14 +424,14 @@ const char *loader_boot(uintptr_t dtb)
 	/* Everything was written with the MMU and caches off. */
 	dbg_mark("xnu jump", entry_pa, ba_pa, top);
 	dbg_flush();
-#if defined(BOARD_CACTUS) && defined(SHIM_TRACE_WDT) && SHIM_TRACE_WDT
+#if defined(BOARD_OPPO6765) && defined(SHIM_TRACE_WDT) && SHIM_TRACE_WDT
 	/* Diagnostic XNU boots retain the armed watchdog for a warm reset. */
 	dbg_stage("xnu wdt armed");
 #else
 	wdt_disable();
 #endif
 	__asm__ volatile("dsb sy; ic iallu; dsb sy; isb" ::: "memory");
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 	/* Last shim-side milestone; next marker is emitted at EL1 after ERET. */
 	dbg_mark("xnu handoff", entry_pa, ba_pa, top);
 	xnu_enter_el1(entry_pa, ba_pa);

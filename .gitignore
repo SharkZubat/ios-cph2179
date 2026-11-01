@@ -8,3 +8,14 @@ shim/out/
 xnu/out/
 xnu/out-*/
 __pycache__/
+# device testing
+OPPOA15S
+android_kernel_oppo_mt6765
+shim/oppo-shim-fresh.bi
+shim/oppo-shim-level4-2.bin
+shim/oppo-shim-level4-3.bin
+shim/oppo-shim-level4-4.bin
+shim/oppo-shim-level4.bin
+shim/oppo-shim.bin
+shim/oppo-shim1.bin
+shim/oppo-shimt.bin

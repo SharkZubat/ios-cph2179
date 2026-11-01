@@ -54,7 +54,7 @@ fi
 TRACE_ADDR="$(cat "$OUT/trace-address.txt")"
 PREFIX="$OUT/trace-stage-$STAGE"
 CFLAGS=(-O2 -ffreestanding -nostdlib -fno-pic -mgeneral-regs-only
-        -mstrict-align -fno-stack-protector -DBOARD_CACTUS)
+        -mstrict-align -fno-stack-protector -DBOARD_OPPO6765)
 
 aarch64-linux-gnu-gcc "${CFLAGS[@]}" -x assembler-with-cpp -DSTAGE="$STAGE" \
     -DTRACE_ADDR="$TRACE_ADDR" -c linux_stage_probe.S -o "$PREFIX.o"

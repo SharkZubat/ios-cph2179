@@ -104,7 +104,7 @@ def main():
                         help="require Stage29 native XNU exception plus pre-EL2-clobber register context")
     parser.add_argument("--require-stage25", action="store_true",
                         help="require Stage30 null-PTE checkpoint, exact VA/PA range and safe page-table descriptor report")
-    parser.add_argument("--early-level", type=int, choices=[1, 2, 3, 4], default=1,
+    parser.add_argument("--early-level", type=int, choices=[1, 2, 3, 4, 5], default=1,
                         help="expected Stage 15 early diagnostic level")
     parser.add_argument("--show", type=int, default=15)
     args = parser.parse_args()
@@ -151,13 +151,24 @@ def main():
             required |= {0x1585, 0x1586}
         if args.early_level >= 4:
             required |= {0x1587, 0x1588}
+        if args.early_level >= 5:
+            required |= {0x158b, 0x158c}
         done = any(r["event"] == 0x158a and r["a"] == args.early_level
                    for r in records)
+        reserve_summary = next((r for r in records if r["event"] == 0x158b), None)
+        reserve_ranges = [r for r in records if r["event"] == 0x158c]
+        reserve_count_ok = (args.early_level < 5 or
+                            (reserve_summary is not None and
+                             reserve_summary["a"] == len(reserve_ranges) and
+                             sorted(r["a"] for r in reserve_ranges) ==
+                             list(range(reserve_summary["a"]))))
         passed = (len(records) >= 12 and done and required <= event_set and
+                  reserve_count_ok and
                   not corrupt and not duplicates and not regressions and
                   all(r["stage"] == 15 for r in records))
         print("STAGE15 EARLY " + ("PASS" if passed else
-              f"NOT VERIFIED; missing={list(map(hex, sorted(required - event_set)))}"))
+              f"NOT VERIFIED; missing={list(map(hex, sorted(required - event_set)))} "
+              f"reservation_count_ok={reserve_count_ok}"))
         if not passed:
             raise SystemExit(1)
     if args.require_stage16:

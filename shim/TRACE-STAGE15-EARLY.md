@@ -1,5 +1,8 @@
 # Stage 15 Early USB: isolate actual shim entry from early MTK MMIO faults
 
+For the OPPO CPH2179 reserved-memory follow-up, see
+[`TRACE-STAGE15-OPPO-RESERVED.md`](TRACE-STAGE15-OPPO-RESERVED.md).
+
 Status 2026-10-22: **built and validated offline; no Early USB image
 has been flashed or demonstrated working on the device yet**.
 

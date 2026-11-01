@@ -20,7 +20,7 @@ _Static_assert(sizeof(struct dbg_entry) == 56, "dbg entry layout");
 #define DBG_HEADER_SIZE		((uint32_t)sizeof(struct dbg_header))
 #define DBG_RING_SIZE		(DBG_TRACE_COUNT * (uint32_t)sizeof(struct dbg_entry))
 
-#if !(defined(BOARD_CACTUS) && CACTUS_PMSG_TRACE)
+#if !(defined(BOARD_OPPO6765) && CACTUS_PMSG_TRACE)
 static inline uint64_t dbg_now(void)
 {
 	uint64_t v;
@@ -64,7 +64,7 @@ static volatile struct dbg_header *hdr(void)
 
 void dbg_init(void)
 {
-#if defined(BOARD_CACTUS) && CACTUS_PMSG_TRACE
+#if defined(BOARD_OPPO6765) && CACTUS_PMSG_TRACE
 	/* Native pmsg is the only persistent sink in a trace build. The old
 	 * CDB1 buffer overlaps recovery's ramoops console area. */
 	pmsg_trace_mark("ENTRY", 0, 0, 0);
@@ -92,7 +92,7 @@ void dbg_init(void)
 
 void dbg_mark(const char *name, uint64_t a, uint64_t b, uint64_t c)
 {
-#if defined(BOARD_CACTUS) && CACTUS_PMSG_TRACE
+#if defined(BOARD_OPPO6765) && CACTUS_PMSG_TRACE
 	pmsg_trace_mark(name, a, b, c);
 #else
 	volatile struct dbg_header *h = hdr();
@@ -134,7 +134,7 @@ void dbg_stage(const char *name)
 
 void dbg_flush(void)
 {
-#if !(defined(BOARD_CACTUS) && CACTUS_PMSG_TRACE)
+#if !(defined(BOARD_OPPO6765) && CACTUS_PMSG_TRACE)
 	if (hdr()->magic != DBG_MAGIC)
 		return;
 	dbg_clean(DBG_BASE, DBG_HEADER_SIZE + DBG_RING_SIZE);
