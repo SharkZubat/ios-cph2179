@@ -57,9 +57,9 @@ NM="${NM:-aarch64-linux-gnu-nm}"
 
 if [ "$BOARD" = cactus ]; then
 	CFLAGS="-O2 -ffreestanding -nostdlib -fno-pic -mgeneral-regs-only -mstrict-align -fno-stack-protector -fno-omit-frame-pointer -Wall -Wextra -DBOARD_CACTUS -DCACTUS_DEBUG=1"
-	DTB="${DTB:-/home/lapdq/cactus-kernel/pack/cactus_dtb.orig.raw}"
-	DTBO="${DTBO:-/home/lapdq/cactus-kernel/images/cactus_dtbo.img}"
-	MBOOTIMG="${MBOOTIMG:-python3 /home/lapdq/cactus-kernel/pack/mkbootimg.py}"
+	DTB="${DTB:-../../device/live-fdt.dtb}"
+	DTBO="${DTBO:-../../device/dtbo.img}"
+	MBOOTIMG="${MBOOTIMG:-mkbootimg}"
 	BASE=0x40078000
 	KERNEL_OFFSET=0x00008000
 	RAMDISK_OFFSET=0x11A88000

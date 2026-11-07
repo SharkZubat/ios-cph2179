@@ -16,11 +16,11 @@
 #define FB_BASE			0x5e605000UL
 #define FB_PHYS			FB_BASE
 #define FB_W			720
-#define FB_H			1440
-#define FB_STRIDE		(FB_W * 4)	/* a8r8g8b8 */
+#define FB_H			1600
+#define FB_STRIDE		(736 * 4)	/* a8r8g8b8 */
 
 /* 720 px wide: 8x16 font at 2x gives 45 columns and 45 rows. */
-#define CON_SCALE		2
+#define CON_SCALE		1
 #define CON_MARGIN		12
 
 /* MT6765 GICv3. */

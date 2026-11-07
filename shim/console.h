@@ -5,8 +5,10 @@
 #define RED	0xffff0000U
 #define BLUE	0xff0000a0U
 #define WHITE	0xffffffffU
+#define GRAY	0xffc0c0c0U
 #define YELLOW	0xffffff00U
 #define GREEN	0xff00ff00U
+#define DEF_BG  0xff025e25U
 
 extern volatile uint32_t *con_fb;
 

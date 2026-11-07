@@ -517,7 +517,7 @@ void shim_main(uint64_t dtb)
 		__asm__ volatile("wfe");
 #endif
 
-	con_clear(RED);
+	con_clear(DEF_BG);
 	print_cpu(dtb);
 
 #if defined(BOARD_CACTUS) && SHIM_RTC_PROBE
@@ -570,7 +570,7 @@ void shim_main(uint64_t dtb)
 	int rc = mmu_enable(&mi);
 	if (!rc) {
 		uint64_t t = now();
-		con_clear(RED);
+		con_clear(DEF_BG);
 		fill_on = now() - t;
 	}
 	con_str("MMU", rc ? "enable failed" : "enabled");

@@ -43,7 +43,7 @@ void con_clear(uint32_t bg)
 			line[x] = bg;
 	}
 	con_bg = bg;
-	row = 0;
+	row = 1;
 }
 
 static void put_char(int col, char ch, uint32_t fg)
@@ -90,7 +90,7 @@ void con_skip(void)
 
 void con_str(const char *label, const char *s)
 {
-	put_str(0, label, YELLOW);
+	put_str(0, label, GRAY);
 	put_str(LABEL_COLS, s, WHITE);
 	row++;
 }
