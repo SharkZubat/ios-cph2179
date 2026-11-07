@@ -1,0 +1,152 @@
+diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
+--- a/bsd/kern/bsd_init.c
++++ b/bsd/kern/bsd_init.c
+@@ -318,2 +318,5 @@
+ void bsd_utaskbootstrap(void);
++#if defined(CACTUS)
++extern void fbcon_stage53_progress(const char *);
++#endif
+ 
+@@ -699,2 +702,5 @@
+ #endif
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 post-VFS init");
++#endif
+ 
+@@ -723,4 +729,11 @@
+ 	/* Initialize mbuf's. */
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 mbuf init enter");
++#endif
+ 	bsd_init_kprintf("calling mbinit\n");
+ 	mbinit();
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 mbuf init done");
++#endif
++
+ 	restricted_in_port_init();
+@@ -806,4 +819,11 @@
+ 
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 autoconf enter");
++#endif
+ 	bsd_init_kprintf("calling bsd_autoconf\n");
+ 	bsd_autoconf();
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 autoconf done");
++#endif
++
+ 
+@@ -874,4 +894,11 @@
+ 
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 pre-root enter");
++#endif
+ 	bsd_init_kprintf("calling inittodr\n");
+ 	inittodr(0);
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 pre-root done");
++#endif
++
+ 
+@@ -881,2 +908,5 @@
+ 
++	#if defined(CACTUS)
++		fbcon_stage53_progress("ST68 root select");
++	#endif
+ 		bsd_init_kprintf("calling setconf\n");
+@@ -887,6 +917,16 @@
+ 
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 mountroot enter");
++#endif
+ 		bsd_init_kprintf("vfs_mountroot\n");
+ 		if (0 == (err = vfs_mountroot())) {
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 root mounted");
++#endif
+ 			break;
+ 		}
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 mountroot retry");
++#endif
++
+ 		rootdevice[0] = '\0';
+@@ -912,2 +952,5 @@
+ 
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 root vnode enter");
++#endif
+ 	bsd_init_kprintf("calling VFS_ROOT\n");
+@@ -924,2 +967,6 @@
+ 	init_rootvnode = NULLVP;  /* use rootvnode after this point */
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 root vnode ready");
++#endif
++
+ 
+@@ -1006,4 +1053,11 @@
+ 
++	#if defined(CACTUS)
++		fbcon_stage53_progress("ST68 devfs mount enter");
++#endif
+ 		bsd_init_kprintf("calling devfs_kernel_mount\n");
+ 		devfs_kernel_mount(mounthere);
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 devfs mount done");
++#endif
++
+ 	}
+@@ -1096,2 +1157,6 @@
+ 	vm_init_before_launchd();
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 PID1 VM ready");
++#endif
++
+ 
+@@ -1107,3 +1172,9 @@
+ 
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 PID1 exec enter");
++#endif
+ 	load_init_program(p);
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 PID1 exec returned");
++#endif
+ 	lock_trace = 1;
+@@ -1182,2 +1253,6 @@
+ 	thread = cloneproc(TASK_NULL, NULL, kernproc, CLONEPROC_FLAGS_MEMSTAT_INTERNAL);
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 PID1 clone created");
++#endif
++
+ 
+@@ -1185,2 +1260,6 @@
+ 	initproc = proc_find(1);
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 initproc obtained");
++#endif
++
+ #if __PROC_INTERNAL_DEBUG
+diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
+--- a/bsd/kern/kern_exec.c
++++ b/bsd/kern/kern_exec.c
+@@ -6918,2 +6918,6 @@
+ 	error = ENOENT;
++#if defined(CACTUS)
++	extern void fbcon_stage53_progress(const char *);
++	fbcon_stage53_progress("ST68 PID1 exec search");
++#endif
+ 	for (i = 0; i < sizeof(init_programs) / sizeof(init_programs[0]); i++) {
+@@ -6921,2 +6925,5 @@
+ 		error = load_init_program_at_path(p, (user_addr_t)scratch_addr, init_programs[i]);
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 PID1 exec attempted");
++#endif
+ 		if (!error) {
+@@ -6928,2 +6935,5 @@
+ 
++#if defined(CACTUS)
++	fbcon_stage53_progress("ST68 PID1 exec FAILED");
++#endif
+ 	panic("Process 1 exec of %s failed, errno %d", ((i == 0) ? "<null>" : init_programs[i - 1]), error);

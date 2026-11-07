@@ -1,0 +1,223 @@
+name: xnu
+
+on:
+  workflow_dispatch:
+    inputs:
+      macos_version:
+        description: macOS release whose xnu to build (13.5 = xnu-8796, iOS 16 era)
+        default: "13.5"
+      kernel_config:
+        description: RELEASE / DEVELOPMENT / DEBUG
+        default: DEVELOPMENT
+      machine_config:
+        description: xnu MACHINE_CONFIG
+        default: SWEET
+      keep_going:
+        description: make -k (collect all compile errors in one run)
+        default: "true"
+  push:
+    branches: [main]
+    paths:
+      - "xnu/patches/**"
+      - ".github/workflows/xnu.yml"
+
+concurrency:
+  group: xnu-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DXB_REPO: https://github.com/blacktop/darwin-xnu-build
+  DXB_SHA: 663906528d1cd5ea8fde7de6f16de73db9511549
+  MACOS_VERSION: ${{ inputs.macos_version || '13.5' }}
+  KERNEL_CONFIG: ${{ inputs.kernel_config || 'DEVELOPMENT' }}
+  MACHINE_CONFIG: ${{ inputs.machine_config || 'SWEET' }}
+  CCACHE: ccache
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
+  CCACHE_COMPRESS: "1"
+  CCACHE_MAXSIZE: 5G
+
+jobs:
+  build:
+    # macos-14 retired November 2, 2026; use supported Intel macOS runner.
+    # xnu-8796 may need an iig compatibility patch with the newer Xcode toolchain.
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore ccache
+        id: ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-${{ runner.os }}-${{ env.MACOS_VERSION }}-${{ env.KERNEL_CONFIG }}-${{ env.MACHINE_CONFIG }}-${{ hashFiles('xnu/patches/**') }}
+          restore-keys: |
+            ccache-${{ runner.os }}-${{ env.MACOS_VERSION }}-${{ env.KERNEL_CONFIG }}-${{ env.MACHINE_CONFIG }}-
+
+      - name: Fetch build script
+        run: |
+          git init -q dxb
+          git -C dxb fetch -q --depth 1 "$DXB_REPO" "$DXB_SHA"
+          git -C dxb checkout -q FETCH_HEAD
+          # 12.5-14.3 use the top-level patches dir; ours go next to blacktop's
+          cp xnu/patches/*.patch xnu/patches/*.sh dxb/patches/
+          # libfirehose_kernel is built by xcodebuild, not the XNU makefiles.
+          # It must be patched here, before bash parses build.sh: a patches/*.sh
+          # script runs later and cannot change an already-parsed function body.
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+
+          path = Path('dxb/build.sh')
+          old = 'ARCHS="x86_64 arm64e" VALID_ARCHS="x86_64 arm64e"'
+          if os.environ['MACHINE_CONFIG'] == 'CACTUS':
+              new = ('ARCHS="arm64" VALID_ARCHS="arm64" '
+                     "OTHER_CFLAGS='$(inherited) -mcpu=cortex-a53 -mno-outline-atomics'")
+          else:
+              new = ('ARCHS="x86_64 arm64e arm64" '
+                     'VALID_ARCHS="x86_64 arm64e arm64"')
+          text = path.read_text(encoding='utf-8')
+          if text.count(old) != 1:
+              raise SystemExit(f'expected exactly one libfirehose arch line, found {text.count(old)}')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          print(new)
+          PY
+          grep -Ec 'VALID_ARCHS="x86_64 arm64e arm64"|OTHER_CFLAGS=.*mcpu=cortex-a53' dxb/build.sh || true
+          ls dxb/patches
+
+      - name: Restore prebuilt tools
+        id: prebuild
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            dxb/fakeroot/usr/local
+            dxb/fakeroot/System/Library/Frameworks/System.framework
+          key: prebuild-${{ runner.os }}-${{ env.MACOS_VERSION }}-${{ env.MACHINE_CONFIG }}-${{ env.DXB_SHA }}-libfirehose-a53-v2
+
+      - name: Deps
+        run: |
+          brew install jq gum bash cmake ninja ccache
+          ccache --version | head -1
+          # build.sh only checks that xcodes exists (Xcode is preinstalled); use shim for preinstalled Xcode
+          printf '#!/bin/sh\nexit 0\n' | sudo tee /usr/local/bin/xcodes >/dev/null
+          sudo chmod +x /usr/local/bin/xcodes
+          sw_vers
+          ls -d /Applications/Xcode*.app
+          XC=$(ls -d /Applications/Xcode_*.app | sort -V | head -1)
+          echo "DEVELOPER_DIR=$XC/Contents/Developer" >> "$GITHUB_ENV"
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
+          xcrun --find iig
+
+      - name: Build
+        working-directory: dxb
+        env:
+          # keep going after errors so one run reports every compile failure
+          MAKEFLAGS: ${{ inputs.keep_going == 'false' && '' || '-k' }}
+        run: |
+          set -o pipefail
+          bash build.sh 2>&1 | tee ../cactus-build.log
+          if [ "$MACHINE_CONFIG" = CACTUS ]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          output = Path('../cactus-build.log').read_text(errors='replace')
+          output = re.sub(r'\x1b\[[0-9;]*m', '', output)
+          required = (
+              '0100-cactus-pid1-status-stage65.patch',
+              '0101-cactus-pid1-top-banner-stage66.patch',
+              '0102-cactus-visible-bar-vfs-stage67.patch',
+              '0103-cactus-bsd-root-pid1-stage68.patch',
+              '0104-cactus-bsd-root-pid1-stage69.patch',
+              '0105-cactus-minimal-pid1-stage70.patch',
+              '0106-cactus-pid1-direct-mockfs-stage71.patch',
+              '0107-cactus-mockfs-posix-pid1-stage72.patch',
+              '0108-cactus-pid1-vm-stage73.patch',
+              '0109-cactus-pid1-physmap-stage74.patch',
+              '0110-cactus-pid1-exec-read-stage75.patch',
+              '0111-cactus-pid1-shadow-stage76.patch',
+              '0112-cactus-pid1-wired-exec-stage77.patch',
+              '0113-cactus-pid1-header-trace-stage78.patch',
+              '0114-cactus-mockfs-vnode-read-stage79.patch',
+          )
+          failures = []
+          for name in required:
+              skipped = re.search(r'Skipping patch\s+[^\n]*' + re.escape(name), output)
+              applied = re.search(r'Applying patch:\s+[^\n]*' + re.escape(name), output)
+              if skipped or not applied:
+                  failures.append(f'{name}: ' + ('SKIPPED' if skipped else 'NOT APPLIED'))
+          if failures:
+              raise SystemExit('Required Cactus patches failed: ' + ', '.join(failures))
+          print('REQUIRED CACTUS PATCHES APPLIED:', ', '.join(required))
+          PY
+          fi
+
+      - name: ccache stats
+        if: always()
+        run: ccache -s -v
+
+      - name: Save prebuilt tools
+        if: success() && steps.prebuild.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            dxb/fakeroot/usr/local
+            dxb/fakeroot/System/Library/Frameworks/System.framework
+          key: ${{ steps.prebuild.outputs.cache-primary-key }}
+
+      - name: Save ccache
+        if: always() && steps.ccache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ steps.ccache.outputs.cache-primary-key }}
+
+      - name: Package build tree for local compiles
+        if: always()
+        run: |
+          # Generated headers, config option headers, mig output and the patched
+          # source: enough to re-run any single compile command from the log locally.
+          SDK=$(xcrun --sdk macosx --show-sdk-path)
+          mkdir -p sdk-kernel-platform
+          cp -R "$SDK/System/Library/Frameworks/Kernel.framework/Versions/A/PrivateHeaders/platform" sdk-kernel-platform/ || true
+          tar czf buildtree.tgz \
+            --exclude='*.o' --exclude='*.cpo' --exclude='*.a' --exclude='*.dSYM' --exclude='*.unstripped' \
+            --exclude='kernel.development.*' --exclude='.git' \
+            -C dxb build/xnu.obj fakeroot/usr/local/include xnu \
+            -C .. sdk-kernel-platform
+          ls -la buildtree.tgz
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xnu-buildtree
+          path: buildtree.tgz
+          retention-days: 7
+
+      - name: Inspect closed KDK support libs
+        if: always()
+        run: |
+          mkdir -p out/kdk-libs
+          for lib in /Library/Developer/KDKs/*/System/Library/KernelSupport/lib*.a; do
+            b=$(basename "$lib" .a)
+            ar t "$lib" > "out/kdk-libs/$b.members.txt" 2>&1 || true
+            nm -m "$lib" > "out/kdk-libs/$b.nm.txt" 2>&1 || true
+            lipo -info "$lib" >> out/kdk-libs/arch.txt 2>&1 || true
+          done
+          ls -la out/kdk-libs
+
+      - name: Collect
+        if: always()
+        run: |
+          mkdir -p out
+          cp -R dxb/fakeroot/System/Library/Kernels/. out/ 2>/dev/null || true
+          ls -la out
+          (cd out && shasum -a 256 kernel.* > SHA256SUMS) || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xnu-kernel
+          path: out/
+          if-no-files-found: warn
